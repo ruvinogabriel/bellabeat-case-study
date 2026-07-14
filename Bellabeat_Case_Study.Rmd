@@ -1,0 +1,158 @@
+---
+title: "Caso de estudio: Análisis de datos Bellabeat"
+author: "Gabriel Ruviño"
+date: "`r Sys.Date()`"
+
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(lubridate)
+
+source("BELLABEAT_LIMPIEZA.R")
+```
+
+# Introducción
+
+Bellabeat es una empresa dedicada al desarrollo de dispositivos inteligentes orientados al bienestar y salud de las personas.
+El objetivo de este análisis es explorar los datos recopilados desde dispositivos Fitbit para comprender los hábitos de actividad física y sueño de los usuarios, identificar patrones relevantes  y generar recomendaciones que pueden apoyar futuras decisiones de negocio.
+
+# Pregunta de negocio
+
+¿Cómo pueden los datos de actividad física y sueño ayudar a Bellabeat a comprender mejor el comportamiento de sus usuarios y mejorar la experiencia ofrecida por sus productos?
+
+# Preparación de los datos
+
+Los datos utilizados corresponden al conjunto de datos públicos Fitbit Fitness Tracker Data.
+
+Durante esta etapa se realizó:
+
+- Importación de archivos CSV.
+- Revisión de la estructura de los datos.
+- Conversión de formatos de fecha.
+- Identificaicón de valores faltantes.
+- Eliminaciónde registros duplicados.
+- Creación de nuevas variables para facilitar el análisis.
+
+# Calidad de los datos
+
+## dailyActivity
+
+- Registros: 457
+- Usuarios: 35
+- Valores faltantes: 0
+- Duplicados: 0
+
+## minuteSleep
+
+- Registros originales: 198559
+- Usuarios: 23
+- Valores faltantes: 0
+- Duplicados: 525
+
+## Hallazgo 1: Actividad según el día de la semana
+
+El promedio de pasos diarios presenta variaciones entre los distintos días de la semana.
+
+Se observa una mayor actividad durante los miércoles, mientras que los martes registran el promedio más bajo.
+
+```{r}
+activity %>%
+  group_by(day_of_week) %>%
+  summarise(promedio_pasos = mean(TotalSteps)) %>%
+  ggplot(aes(x = day_of_week, y = promedio_pasos)) +
+  geom_col() +
+  labs(
+    title = "Promedio de pasos por día de la semana",
+    x = "Día",
+    y = "Promedio de pasos"
+  )
+```
+
+## Hallazgo 2: Pasos y calorías
+
+Se identificó una correlación positiva moderada (r= 0.58) entre la cantidad de pasos diarios y las calorías quemadas.
+
+En términos generales, un mayor número de pasos se asocia con un mayor gasto calórico, aunque existen algunos valores atípicos.
+
+```{r}
+ggplot(activity, aes(x = TotalSteps, y = Calories)) +
+  geom_point() +
+  labs(
+    title = "Relación entre pasos y calorías",
+    x = "Pasos",
+    y = "Calorías"
+  )
+```
+## Hallazgo 3: Tiempo sedentario
+
+Los usuarios presentan una elevada cantidad de minutos sedentarios durante el día.
+
+También se observaron registros extremos cercanos a las 24 horas de sedentarismo, los cuales podrían corresponder a dispositivos sin uso o registros que requieren revisión.
+
+```{r}
+ggplot(activity, aes(x = SedentaryMinutes)) +
+  geom_histogram(binwidth = 30) +
+  labs(
+    title = "Distribución de minutos sedentarios",
+    x = "Minutos sedentarios",
+    y = "Cantidad de registros"
+  )
+```
+
+## Hallazgo 4: Sueño
+
+Los usuarios registran un promedio de 424 minutos de sueño por noche ( aproximadamente 7,1 horas)
+
+La mayor concentración de registros se encuentra entre 450 y 550 minutos de sueño.
+
+```{r}
+ggplot(sleep_daily, aes(x = minutos_sueno)) +
+  geom_histogram(binwidth = 30) +
+  labs(
+    title = "Distribución de minutos de sueño",
+    x = "Minutos de sueño",
+    y = "Cantidad de registros"
+  )
+```
+
+## Hallazgo 5: Relación entre sueño y actividad
+
+Al unir la información de actividad física y sueño se obtuvo una correlación de -0,17.
+
+Este resultado indica que la duración del sueño, por si sola, no presenta una relación signficativa con la cantidad de pasos diarios registrados.
+
+```{r}
+ggplot(activity_sleep,
+       aes(x = minutos_sueno,
+           y = TotalSteps)) +
+  geom_point() +
+  labs(
+    title = "Relación entre sueño y pasos diarios",
+    x = "Minutos de sueño",
+    y = "Pasos diarios"
+  )
+```
+
+# Recomendaciones
+
+A partir del análisis realizado se proponen las siguientes recomendacioens a Bellabeat:
+
+- Incentivar la actividad física durante los días donde se observa menor movimiento.
+- Implementar recordatorios personalizados para reducir el tiempo sedentario.
+- Promover hábitos de sueño saludables mediante funciones de seguimiento y recordatorios.
+- Integrar información de actividad física, sueño y otras métricas (como frecuencia cardíaca) para entregar recomendaciones personalizadas.
+
+# Conclusión
+
+El análisis permitió identificar patrones relevantes en la actividad física y el sueño de los usuarios.
+
+Si bien existe una relación moderada entre pasos diarios y calorías quemadas, no se encontró evidencia de una relación positiva entre la duración del sueño y la cantidad de pasos diarios.
+
+Los resultados obtenidos pueden servir como base para desarrollar funcionalidades orientadas a fomentar hábitos saludables y mejorar la experiencia de los usuarios de Bellabeat.
